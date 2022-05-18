@@ -21,11 +21,12 @@ class Matrix:
     Starting with lazy evaluation of transposition
     '''
     @micropython.native
-    def __init__(self, type_code, initial):
+    def __init__(self, type_code, initial=None):
         '''
         type_code should be one of 'i' (int), 'f'(float), or 'd'(double)
         initial should be empty, a list, or a list of lists
         '''
+        self.type_code = type_code
         self.transposed = False
         if initial:
             if isinstance(initial[0], list):
@@ -33,7 +34,7 @@ class Matrix:
                 self.columns = len(initial[0])
                 self.arr = array(type_code)
                 for i in initial:
-                    self.arr.extend(i)
+                    self.extend(i)
                 return
             else:
                 self.rows = 1
@@ -46,9 +47,12 @@ class Matrix:
             self.arr = array(type_code)
             return
 
+    def extend(self, to_add):
+        self.arr.extend(array(self.type_code, to_add))
+
     def add_row(self, row):
         "Adds a row to the matrix"
-        self.arr.extend(row)
+        self.extend(row)
         if self.columns == 0:
             self.columns = len(row)
         self.rows = self.rows + 1
@@ -62,8 +66,8 @@ class Matrix:
 
     def get(self, row, column):
         if self.transposed:
-            return self.array[column * self.rows + row]
-        return self.array[row * self.columns + column]
+            return self.arr[column * self.rows + row]
+        return self.arr[row * self.columns + column]
 
     def get_rows(self):
         if self.transposed:
@@ -75,31 +79,31 @@ class Matrix:
             return self.rows
         return self.columns
 
-    @micropython.native
+    # @micropython.native
     def __add__(self, other):
         "Adds two matrices. This needs a sanity check for transposition"
-        out = Matrix(self.arr.typecode)
+        out = Matrix(self.type_code)
         if self.transposed:
             for c in range(self.columns):
                 for r in range(self.rows):
                     out.arr.append(self.arr[r * self.columns + c])
         else:
-            out.arr.extend(self.arr)
-        out.columns = self.columns
-        out.rows = self.rows
+            out.extend(self.arr)
+        out.columns = self.get_columns()
+        out.rows = self.get_rows()
         for r in range(other.rows):
             rt = r * other.columns
             for c in range(other.columns):
-                out.arr[i] += other.arr[rt + c]
+                out.arr[rt+c] += other.arr[rt + c]
         return out
 
-    @micropython.native
+    # @micropython.native
     def __mul__(self, other):
         out = None
-        if isinstance(other, float) or other.array.typecode == 'f' or other.array.typecode == 'd':
+        if isinstance(other, float) or other.type_code == 'f' or other.type_code == 'd':
             out = Matrix('f')
         else:
-            out = Matrix(self.arr.typecode)
+            out = Matrix(self.type_code)
         if isinstance(other, float) or isinstance(other, int):
             out.columns = self.columns
             out.rows = self.rows
@@ -109,24 +113,37 @@ class Matrix:
         # Out will have as many rows as self and as many columns as other
         out.rows = self.get_rows()
         out.columns = other.get_columns()
-        for r in range(out.get_rows):
-            for c in range(out.get_columns):
+        for r in range(out.get_rows()):
+            for c in range(out.get_columns()):
                 cross = 0
                 # Would this be faster as a sum of a comprehension?
-                for i in range(self.get_columns):
+                for i in range(self.get_columns()):
                     cross += self.get(r, i) * other.get(i, c)
+                    print(self.get(r, i), "*", other.get(i, c))
                 out.arr.append(cross)
+                print()
+        return out
 
 
     # Transposition doesn't change determinant which is nice
-    @micropython.native
+    # @micropython.native
     def determinant(self):
         "Only meaningful with square matrices. Skipping that check atm"
         return determinant_helper(memoryview(self.arr), self.rows)
 
+    def __str__(self):
+        print("[")
+        for i in range(self.get_rows()):
+            print("[", end="")
+            for j in range(i*self.get_columns(), (i+1)*self.get_columns()):
+                print(self.arr[j], end=",")
+            print("]")
+        print("]")
 
-Matrix('i', [1,2,3,4,5])
-
+b = Matrix('i', [[1,2],[3,4]])
+a = Matrix('i', [[3,8],[4,6]])
+print(a + b)
+print(a * b)
 # Stolen from https://stackoverflow.com/questions/32114054/matrix-inversion-without-numpy
 # def transposeMatrix(m):
 #     return map(list,zip(*m))
