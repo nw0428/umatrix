@@ -124,6 +124,9 @@ class Matrix:
         "Only meaningful with square matrices. Skipping that check atm"
         return determinant_helper(memoryview(self.arr), self.rows)
 
+
+Matrix('i', [1,2,3,4,5])
+
 # Stolen from https://stackoverflow.com/questions/32114054/matrix-inversion-without-numpy
 # def transposeMatrix(m):
 #     return map(list,zip(*m))
