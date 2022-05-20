@@ -217,7 +217,7 @@ def lin_regression(x, y):
     xT = x.T()
     alpha = Matrix('f')
     for i in range(x.get_columns()):
-        alpha.add_row([.000001 if i == j else 0 for j in range(x.get_columns())])
+        alpha.add_row([.0000001 if i == j else 0 for j in range(x.get_columns())])
 
     return (alpha + xT * x).get_inverse() * xT * y.T()
 
