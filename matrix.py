@@ -206,7 +206,7 @@ mv = memoryview(c.arr)
 # print(c.get_inverse())
 
 
-x = Matrix('f', [[1, 1],[1, 2.1],[1,5.2]])
+x = Matrix('f', [[1, 1],[1, 2],[1,5]])
 y = Matrix('f', [5, 10, 25]).T()
 # xT = x.T()
 # print(xT * x)
