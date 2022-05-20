@@ -95,10 +95,11 @@ class Matrix:
             self.columns = len(row)
         self.rows = self.rows + 1
 
+
     def T(self):
         '''
         Transposes the matrix turning columns into rows.
-        I think the flag is more efficient if slightly annoying to write
+        I tried making this efficient and failed utterly. Gotta fix this
         '''
         out = self.clone()
         out.transposed = not self.transposed
@@ -125,10 +126,24 @@ class Matrix:
         if self.transposed:
             transpose_matrix(self.arr, self.rows, self.columns, out.arr)
         else:
-            out.extend(self.arr)
+            out.arr.extend(self.arr)
         out.columns = self.get_columns()
         out.rows = self.get_rows()
         return out
+
+    def add_bias_ones(self):
+        out = Matrix(self.type_code)
+        if self.transposed:
+            return #Fix this
+
+        for i in range(len(self.arr)):
+            if i % self.columns == 0:
+                out.arr.append(1)
+            out.arr.append(self.arr[i])
+        out.columns = self.get_columns() + 1
+        out.rows = self.get_rows()
+        return out
+
 
     # @micropython.native
     def __add__(self, other):
@@ -206,7 +221,7 @@ mv = memoryview(c.arr)
 # print(c.get_inverse())
 
 
-x = Matrix('f', [[1, 1],[1, 2],[1,5]])
+x = Matrix('f', [1,2,5]).T().clone()
 y = Matrix('f', [5, 10, 25]).T()
 # xT = x.T()
 # print(xT * x)
@@ -214,6 +229,8 @@ y = Matrix('f', [5, 10, 25]).T()
 
 
 def lin_regression(x, y):
+    x = x.add_bias_ones()
+    print(x)
     xT = x.T()
     alpha = Matrix('f')
     for i in range(x.get_columns()):
