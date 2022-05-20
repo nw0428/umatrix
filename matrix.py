@@ -2,6 +2,8 @@ from array import array
 
 def get_matrix_minor(arr,i,j,n):
     a = [arr[n*x:n*x + j] + arr[n*x+j+1:n*x+n] for x in range(n) if x != i]
+    if len(a) < 1:
+        print(arr, n, a)
     out = a[0]
     for i in range(1, len(a)):
         out = out + a[i]
@@ -9,6 +11,8 @@ def get_matrix_minor(arr,i,j,n):
 
 def determinant_helper(arr, n):
     #base case for 2x2 matrix
+    if n == 1:
+        return arr[0]
     if n == 2:
         return arr[0]*arr[3]-arr[2]*arr[1]
     determinant = 0
@@ -30,6 +34,8 @@ def transposeListMatrix(m):
 def inverse_helper(arr, n):
     determinant = determinant_helper(arr, n)
     #special case for 2x2 matrix:
+    if n == 1:
+        return [[1/arr[0]]]
     if n == 2:
         return [[arr[3]/determinant, -1*arr[1]/determinant], [-1*arr[2]/determinant, arr[0]/determinant]]
     cofactors = []
@@ -94,11 +100,13 @@ class Matrix:
         Transposes the matrix turning columns into rows.
         I think the flag is more efficient if slightly annoying to write
         '''
-        self.transposed = not self.transposed
+        out = self.clone()
+        out.transposed = not self.transposed
+        return out
 
     def get(self, row, column):
         if self.transposed:
-            return self.arr[column * self.rows + row]
+            return self.arr[column * self.columns + row]
         return self.arr[row * self.columns + column]
 
     def get_rows(self):
@@ -173,14 +181,15 @@ class Matrix:
         return out
 
     def __str__(self):
-        out ="Inverted: " + str(self.transposed) + "\n"
-        out += "[\n"
+        if self.transposed:
+            return str(self.clone())
+        out = "[\n"
         for i in range(self.get_rows()):
             out += "["
-            for j in range(i*self.get_columns(), (i+1)*self.get_columns()):
-                out += str(self.arr[j]) + ","
-            out += "]\n"
-        out +="\n]"
+            for j in range(self.get_columns()):
+                out += str(self.arr[i*self.get_columns() + j]) + ","
+            out += "],\n"
+        out +="]"
         return out
 
 a = Matrix('i', [[3,8],[4,6]])
@@ -193,8 +202,17 @@ c = Matrix('i', [[1,2,5],[3,4,2],[3,2,7]])
 # print(b.get_inverse())
 mv = memoryview(c.arr)
 # print(get_matrix_minor(mv, 1,1,3))
-print(c.determinant())
-print(c.get_inverse())
+# print(c.determinant())
+# print(c.get_inverse())
+
+
+x = Matrix('f', [[1, 1],[1, 2.1],[1,5.2]])
+y = Matrix('f', [5, 10, 25]).T()
+xT = x.T()
+
+a = (xT * x).get_inverse() * xT * y.T()
+print(a)
+
 # def getMatrixInverse(m):
 #     determinant = getMatrixDeternminant(m)
 #     #special case for 2x2 matrix:
