@@ -144,6 +144,18 @@ class Matrix:
         out.rows = self.get_rows()
         return out
 
+    def polynomialize(self, degree):
+        "This will also add the bias ones so don't use it with add_bias_ones"
+        out = Matrix(self.type_code)
+
+        for i in range(len(self.arr)):
+            if i % self.columns == 0:
+                out.arr.append(1)
+            for j in range(degree):
+                out.arr.append(self.arr[i]**(j+1))
+        out.columns = self.get_columns() * degree + 1
+        out.rows = self.get_rows()
+        return out
 
     # @micropython.native
     def __add__(self, other):
@@ -223,19 +235,22 @@ mv = memoryview(c.arr)
 
 x = Matrix('f', [1,2,5]).T().clone()
 y = Matrix('f', [5, 10, 25]).T()
-# xT = x.T()
-# print(xT * x)
-# a = (xT * x).get_inverse() * xT * y.T()
 
 
 def lin_regression(x, y):
     x = x.add_bias_ones()
-    print(x)
     xT = x.T()
     alpha = Matrix('f')
     for i in range(x.get_columns()):
         alpha.add_row([.0000001 if i == j else 0 for j in range(x.get_columns())])
+    return (alpha + xT * x).get_inverse() * xT * y.T()
 
+def poly_regression(x, y, degree):
+    x = x.polynomialize(degree)
+    xT = x.T()
+    alpha = Matrix('f')
+    for i in range(x.get_columns()):
+        alpha.add_row([.0000001 if i == j else 0 for j in range(x.get_columns())])
     return (alpha + xT * x).get_inverse() * xT * y.T()
 
 print(lin_regression(x, y))
