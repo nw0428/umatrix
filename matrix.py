@@ -1,17 +1,49 @@
 from array import array
 
 def get_matrix_minor(arr,i,j,n):
-    return sum([arr[n*x:n*x + j] + arr[n*x+j+1:n*x+n] for x in range(n) if x != i])
+    a = [arr[n*x:n*x + j] + arr[n*x+j+1:n*x+n] for x in range(n) if x != i]
+    out = a[0]
+    for i in range(1, len(a)):
+        out = out + a[i]
+    return out
 
 def determinant_helper(arr, n):
     #base case for 2x2 matrix
     if n == 2:
         return arr[0]*arr[3]-arr[2]*arr[1]
-
     determinant = 0
     for c in range(n):
-        determinant += ((-1)**c)*arr[c]*determinant_helper(get_matrix_minor(arr,0,c, n))
+        a = ((-1)**c) * arr[c]
+        b = a * determinant_helper(get_matrix_minor(arr,0,c,n), n-1)
+        determinant += b
     return determinant
+
+def transpose_matrix(arr, rows, columns, out):
+    for c in range(columns):
+        for r in range(rows):
+            out.append(arr[r * columns + c])
+    return out
+
+def transposeListMatrix(m):
+    return list(map(list,zip(*m)))
+
+def inverse_helper(arr, n):
+    determinant = determinant_helper(arr, n)
+    #special case for 2x2 matrix:
+    if n == 2:
+        return [[arr[3]/determinant, -1*arr[1]/determinant], [-1*arr[2]/determinant, arr[0]/determinant]]
+    cofactors = []
+    for r in range(n):
+        cofactorRow = []
+        for c in range(n):
+            minor = get_matrix_minor(arr,r,c,n)
+            cofactorRow.append(((-1)**(r+c)) * determinant_helper(minor, n-1))
+        cofactors.append(cofactorRow)
+    cofactors = transposeListMatrix(cofactors)
+    for r in range(len(cofactors)):
+        for c in range(len(cofactors)):
+            cofactors[r][c] = cofactors[r][c]/determinant
+    return cofactors
 
 
 class Matrix:
@@ -21,7 +53,7 @@ class Matrix:
     Starting with lazy evaluation of transposition
     '''
     @micropython.native
-    def __init__(self, type_code, initial=None):
+    def __init__(self, type_code='f', initial=None):
         '''
         type_code should be one of 'i' (int), 'f'(float), or 'd'(double)
         initial should be empty, a list, or a list of lists
@@ -80,21 +112,24 @@ class Matrix:
         return self.columns
 
     # @micropython.native
-    def __add__(self, other):
-        "Adds two matrices. This needs a sanity check for transposition"
+    def clone(self):
         out = Matrix(self.type_code)
         if self.transposed:
-            for c in range(self.columns):
-                for r in range(self.rows):
-                    out.arr.append(self.arr[r * self.columns + c])
+            transpose_matrix(self.arr, self.rows, self.columns, out.arr)
         else:
             out.extend(self.arr)
         out.columns = self.get_columns()
         out.rows = self.get_rows()
+        return out
+
+    # @micropython.native
+    def __add__(self, other):
+        "Adds two matrices. This needs a sanity check for transposition"
+        out = self.clone()
         for r in range(other.rows):
             rt = r * other.columns
             for c in range(other.columns):
-                out.arr[rt+c] += other.arr[rt + c]
+                out.arr[rt+c] += other.get(r, c)
         return out
 
     # @micropython.native
@@ -119,9 +154,7 @@ class Matrix:
                 # Would this be faster as a sum of a comprehension?
                 for i in range(self.get_columns()):
                     cross += self.get(r, i) * other.get(i, c)
-                    print(self.get(r, i), "*", other.get(i, c))
                 out.arr.append(cross)
-                print()
         return out
 
 
@@ -131,35 +164,37 @@ class Matrix:
         "Only meaningful with square matrices. Skipping that check atm"
         return determinant_helper(memoryview(self.arr), self.rows)
 
+    def get_inverse(self):
+        out = Matrix('f')
+        out.columns = self.get_columns()
+        out.rows = self.get_rows()
+        for row in inverse_helper(memoryview(self.arr), self.get_columns()):
+            out.extend(row)
+        return out
+
     def __str__(self):
-        print("[")
+        out ="Inverted: " + str(self.transposed) + "\n"
+        out += "[\n"
         for i in range(self.get_rows()):
-            print("[", end="")
+            out += "["
             for j in range(i*self.get_columns(), (i+1)*self.get_columns()):
-                print(self.arr[j], end=",")
-            print("]")
-        print("]")
+                out += str(self.arr[j]) + ","
+            out += "]\n"
+        out +="\n]"
+        return out
 
-b = Matrix('i', [[1,2],[3,4]])
 a = Matrix('i', [[3,8],[4,6]])
-print(a + b)
-print(a * b)
-# Stolen from https://stackoverflow.com/questions/32114054/matrix-inversion-without-numpy
-# def transposeMatrix(m):
-#     return map(list,zip(*m))
-
-
-
-# def getMatrixDeternminant(m):
-#     #base case for 2x2 matrix
-#     if len(m) == 2:
-#         return m[0][0]*m[1][1]-m[0][1]*m[1][0]
-
-#     determinant = 0
-#     for c in range(len(m)):
-#         determinant += ((-1)**c)*m[0][c]*getMatrixDeternminant(getMatrixMinor(m,0,c))
-#     return determinant
-
+b = Matrix('i', [[1,2],[3,4]])
+c = Matrix('i', [[1,2,5],[3,4,2],[3,2,7]])
+# print(a + b)
+# print(a * b)
+# a.T()
+# print(a.clone())
+# print(b.get_inverse())
+mv = memoryview(c.arr)
+# print(get_matrix_minor(mv, 1,1,3))
+print(c.determinant())
+print(c.get_inverse())
 # def getMatrixInverse(m):
 #     determinant = getMatrixDeternminant(m)
 #     #special case for 2x2 matrix:
