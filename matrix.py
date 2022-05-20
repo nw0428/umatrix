@@ -208,10 +208,21 @@ mv = memoryview(c.arr)
 
 x = Matrix('f', [[1, 1],[1, 2.1],[1,5.2]])
 y = Matrix('f', [5, 10, 25]).T()
-xT = x.T()
+# xT = x.T()
+# print(xT * x)
+# a = (xT * x).get_inverse() * xT * y.T()
 
-a = (xT * x).get_inverse() * xT * y.T()
-print(a)
+
+def lin_regression(x, y):
+    xT = x.T()
+    alpha = Matrix('f')
+    for i in range(x.get_columns()):
+        alpha.add_row([.000001 if i == j else 0 for j in range(x.get_columns())])
+
+    return (alpha + xT * x).get_inverse() * xT * y.T()
+
+print(lin_regression(x, y))
+
 
 # def getMatrixInverse(m):
 #     determinant = getMatrixDeternminant(m)
