@@ -1,4 +1,4 @@
-code = '''from array import array
+from array import array
 
 # @micropython.native
 def get_matrix_minor(arr,i,j,n):
@@ -264,4 +264,3 @@ def poly_regression(x, y, degree):
 
 
 # print(lin_regression(x, y))
-'''
